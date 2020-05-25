@@ -4,26 +4,25 @@ import org.http4s.{Response, _}
 import org.pac4j.core.config.Config
 import org.pac4j.core.engine.DefaultLogoutLogic
 import org.pac4j.core.http.adapter.HttpActionAdapter
-import scalaz.concurrent.Task
 
 /**
   * Http4s Service to handle user logging out from the website
   *
   * @author Iain Cardnell
   */
-class LogoutService(config: Config,
+class LogoutService[F[_]](config: Config,
                     defaultUrl: Option[String] = None,
                     logoutUrlPattern: Option[String] = None,
                     localLogout: Boolean = true,
                     destroySession: Boolean = false,
                     centralLogout: Boolean = false) {
 
-  def logout(request: Request): Task[Response] = {
-    val logoutLogic = new DefaultLogoutLogic[Task[Response], Http4sWebContext]()
+  def logout(request: Request[F]): Response[F] = {
+    val logoutLogic = new DefaultLogoutLogic[Response[F], Http4sWebContext]()
     val webContext = Http4sWebContext(request, config)
     logoutLogic.perform(webContext,
       config,
-      config.getHttpActionAdapter.asInstanceOf[HttpActionAdapter[Task[Response], Http4sWebContext]],
+      config.getHttpActionAdapter.asInstanceOf[HttpActionAdapter[Response[F], Http4sWebContext]],
       this.defaultUrl.orNull,
       this.logoutUrlPattern.orNull,
       this.localLogout,

@@ -1,12 +1,14 @@
 package org.pac4j.http4s
 
-import java.util.UUID
+import java.util.{Optional, UUID}
 
+import org.pac4j.core.context.Cookie
 import org.pac4j.core.context.session.SessionStore
-import org.pac4j.core.context.{Cookie, Pac4jConstants}
+import org.pac4j.core.util.Pac4jConstants
 import org.slf4j.LoggerFactory
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
+import scala.jdk.OptionConverters._
 
 /**
   * Http4sCacheSessionStore is an in memory session implementation.
@@ -25,7 +27,7 @@ class Http4sCacheSessionStore extends SessionStore[Http4sWebContext] {
   private val cache = scala.collection.mutable.Map[String, Map[String, AnyRef]]()
 
   override def getOrCreateSessionId(context: Http4sWebContext): String = {
-    val id = Option(context.getRequestAttribute(Pac4jConstants.SESSION_ID)) match {
+    val id = context.getRequestAttribute(Pac4jConstants.SESSION_ID).toScala match {
       case Some(sessionId) => sessionId.toString
       case None =>
         context.getRequestCookies.asScala.find(_.getName == Pac4jConstants.SESSION_ID) match {
@@ -46,12 +48,12 @@ class Http4sCacheSessionStore extends SessionStore[Http4sWebContext] {
     id
   }
 
-  override def get(context: Http4sWebContext, key: String): AnyRef = {
+  override def get(context: Http4sWebContext, key: String): Optional[AnyRef] = {
     val sessionId = getOrCreateSessionId(context)
     val sessionMap = cache.getOrElseUpdate(sessionId, Map.empty)
     val value = sessionMap.get(key).orNull
-    logger.debug(s"get sessionId: $sessionId key: $key")
-    value
+    logger.debug(s"get sessionId: $sessionId key: $key value: $value")
+    Optional.ofNullable(value)
   }
 
   override def set(context: Http4sWebContext, key: String, value: AnyRef): Unit = {
